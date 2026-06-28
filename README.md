@@ -1,89 +1,166 @@
-# bowling-game
+<div align="center">
 
-A program to calculate the score during an American ten-pin bowling game.
+# 🎳 bowling-game
 
-It runs as an interactive CLI: you play frame by frame, entering each throw,
-and after every frame the cumulative scoreboard is printed.
+**Score an American ten-pin bowling game — one frame at a time.**
 
-## Requirements
+An interactive command-line scorer written in Go. Play frame by frame, type each
+throw, and watch the cumulative scoreboard build in real time.
+
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-444)](#-requirements)
+[![Interface](https://img.shields.io/badge/interface-CLI-1f6feb)](#-running)
+[![Tested](https://img.shields.io/badge/reference%20games-133%20%7C%20300%20%7C%20119%20%E2%9C%93-2ea043)](#-testing)
+
+[Requirements](#-requirements) • [Running](#-running) • [How to play](#-how-to-play) • [Testing](#-testing) • [Project layout](#-project-layout) • [Technical decisions](#-decisiones-técnicas-tomadas-para-la-implementación)
+
+</div>
+
+---
+
+## 🎬 Demo
+
+```text
+🎳 Ten-Pin Bowling
+Enter each throw as a number (0-10), 'X' for a strike, or '/' for a spare.
+
+Frame  1 — 10 pins standing > 1
+Frame  1 — 9 pins standing > 4
+  Scoreboard: F1: 5
+Frame  2 — 10 pins standing > 4
+Frame  2 — 6 pins standing > 5
+  Scoreboard: F1: 5 | F2: 14
+...
+Frame 10 — 10 pins standing > X
+  ★ Strike! You earned 2 bonus throws.
+Frame 10 (bonus throw) — 10 pins standing > X
+Frame 10 (bonus throw) — 10 pins standing > X
+  Scoreboard: ... | F10: 300
+
+Game over! Final score: 300
+```
+
+---
+
+## 📦 Requirements
 
 ### Linux / macOS
 
-- [Go](https://go.dev/dl/) 1.22 or newer (`sudo apt install golang-go` on Debian/Ubuntu).
+[Go](https://go.dev/dl/) **1.22 or newer** is a required dependency. On
+Debian/Ubuntu you can install it with:
+
+```bash
+sudo apt install golang-go
+```
+
+On macOS with [Homebrew](https://brew.sh/):
+
+```bash
+brew install go
+```
 
 ### Windows
 
 The program is pure Go and uses only the standard library, so it runs on Windows
-without code changes. It is verified to cross-compile for `windows/amd64` and
-`windows/arm64`. To run it you need:
+**without code changes**. It is verified to cross-compile for `windows/amd64` and
+`windows/arm64`.
 
-- [Go](https://go.dev/dl/) 1.22 or newer for Windows (the `.msi` installer from go.dev).
-- A UTF-8 capable terminal so the icons (`🎳`, `★`, `—`) render correctly.
-  **Windows Terminal** or **PowerShell 7** work out of the box. If you use the
-  legacy `cmd.exe`, switch the console to UTF-8 first:
+**1. Install Go 1.22 or newer** — it is a required dependency. Either with
+[winget](https://learn.microsoft.com/windows/package-manager/winget/) (PowerShell):
 
-  ```bat
-  chcp 65001
-  go run .
-  ```
-
-  Windows `CRLF` line endings are handled automatically, so no extra setup is
-  needed for input.
-
-To build a standalone Windows executable (from any OS):
-
-```bash
-GOOS=windows GOARCH=amd64 go build -o bowling.exe .
+```powershell
+winget install --id GoLang.Go -e
 ```
 
-## Running
+…or download the `.msi` installer for Windows from [go.dev/dl](https://go.dev/dl/)
+and run it. After installing, reopen your terminal so `go` is available on the `PATH`.
+
+**2. Use a UTF-8 capable terminal** so the icons (`🎳`, `★`, `—`) render correctly.
+**Windows Terminal** or **PowerShell 7** work out of the box. If you use the
+legacy `cmd.exe`, switch the console to UTF-8 first:
+
+```bat
+chcp 65001
+go run .
+```
+
+> [!NOTE]
+> Windows `CRLF` line endings are handled automatically, so no extra setup is
+> needed for input.
+
+---
+
+## 🚀 Running
 
 ```bash
 go run .
 ```
 
-Enter each throw as:
+---
 
-- a number from `0` to `10` (pins knocked down),
-- `X` for a strike (all ten pins on the first throw),
-- `/` for a spare (the remaining pins on the second throw).
+## 🎮 How to play
 
-Invalid entries are rejected with an explanation and re-prompted.
+Enter one throw at a time. Each throw can be:
 
-### Example session
+| Input | Meaning |
+| :---: | :--- |
+| `0` – `10` | Number of pins knocked down |
+| `X` / `x` | **Strike** — all ten pins on the first throw |
+| `/` | **Spare** — the remaining pins on the second throw |
 
-```
-Frame  1 — 10 pins standing > 1
-Frame  1 — 9 pins standing > 4
-  Scoreboard: F1: 5
-Frame  2 — 10 pins standing > 4
-...
-```
+> [!TIP]
+> Invalid entries (out of range, a `/` as the first throw, an `X` when pins are
+> already down…) are **rejected with an explanation and re-prompted** — you can't
+> enter an impossible score.
 
-## Testing
+### Scoring rules
 
-The scoring engine is covered by unit tests, including the three reference
-games from the kata specification (final scores 133, 300 and 119):
+| Frame result | Score for the frame |
+| :--- | :--- |
+| **Open** (≤ 9 pins in two throws) | Pins knocked down |
+| **Spare** (`/`) | 10 + next **1** throw |
+| **Strike** (`X`) | 10 + next **2** throws |
+| **Tenth frame** | Spare → 1 bonus throw · Strike → 2 bonus throws |
+
+---
+
+## 🧪 Testing
+
+The scoring engine is covered by unit tests, including the **three reference
+games** from the kata specification:
 
 ```bash
 go test ./...
 ```
 
-## Layout
+| Reference game | Final score |
+| :--- | :---: |
+| Regular game | `133` |
+| Perfect game (12 strikes) | `300` |
+| All spares | `119` |
 
-- `main.go` — interactive CLI (input/output only).
-- `internal/bowling/` — scoring engine:
-  - `parser.go` — turns a single input into a pin count, with validation.
-  - `game.go` — frame model and frame-by-frame game flow.
-  - `scorer.go` — cumulative scoring (strikes, spares and the tenth-frame bonus).
-  - `errors.go` — validation errors.
+---
 
-## Decisiones técnicas tomadas para la implementación
+## 🗂️ Project layout
 
-> Ya que este proyecto es una prueba técnica para **Zollner** se plantearon y tomaron las sigueintes decisiones tecnicas.
+```text
+bowling-game/
+├── main.go                 # interactive CLI (input/output only)
+└── internal/bowling/       # scoring engine (no I/O — fully testable)
+    ├── parser.go           # turns a single input into a pin count, with validation
+    ├── game.go             # frame model and frame-by-frame game flow
+    ├── scorer.go           # cumulative scoring (strikes, spares, tenth-frame bonus)
+    └── errors.go           # validation errors
+```
+
+---
+
+## 🛠️ Decisiones técnicas tomadas para la implementación
+
+> Ya que este proyecto es una prueba técnica para **Zollner** se plantearon y tomaron las siguientes decisiones tecnicas.
 
 - **Lenguaje: Go.** Se eligió Go porque es el lenguaje que Zollner utiliza en el
-  backend, de modo que la solución refleja el stack real de la empresa. 
+  backend, de modo que la solución refleja el stack real de la empresa.
 
 - **Sin interfaz gráfica (UI).** El requerimiento inicial solo pide "calcular la
   puntuación durante una partida", no una interfaz visual. Se implementó por
