@@ -12,7 +12,7 @@ throw, and watch the cumulative scoreboard build in real time.
 [![Interface](https://img.shields.io/badge/interface-CLI-1f6feb)](#-running)
 [![Tested](https://img.shields.io/badge/reference%20games-133%20%7C%20300%20%7C%20119%20%E2%9C%93-2ea043)](#-testing)
 
-[Requirements](#-requirements) • [Running](#-running) • [How to play](#-how-to-play) • [Testing](#-testing) • [Project layout](#-project-layout) • [Technical decisions](#-decisiones-técnicas-tomadas-para-la-implementación)
+[Requirements](#-requirements) • [Running](#-running) • [How to play](#-how-to-play) • [Testing](#-testing) • [Project layout](#-project-layout) • [Technical decisions](#-technical-decisions)
 
 </div>
 
@@ -155,46 +155,44 @@ bowling-game/
 
 ---
 
-## 🛠️ Decisiones técnicas tomadas para la implementación
+## 🛠️ Technical decisions
 
-> Ya que este proyecto es una prueba técnica para **Zollner** se plantearon y tomaron las siguientes decisiones tecnicas.
+> Since this project is a technical interview test for **Zollner**, the following
+> technical decisions were considered and made.
 
-- **Lenguaje: Go.** Se eligió Go porque es el lenguaje que Zollner utiliza en el
-  backend, de modo que la solución refleja el stack real de la empresa.
+- **Language: Go.** Go was chosen because it is the language Zollner uses on the
+  backend, so the solution mirrors the company's real stack.
 
-- **Sin interfaz gráfica (UI).** El requerimiento inicial solo pide "calcular la
-  puntuación durante una partida", no una interfaz visual. Se implementó por
-  tanto una **CLI interactiva** y se evitó añadir una UI que no estaba solicitada,
-  manteniendo el alcance acotado al problema planteado sin desvíos.
+- **No graphical user interface (UI).** The original requirement only asks to
+  "calculate the score during a game", not a visual interface. An **interactive
+  CLI** was implemented instead, and adding a UI that was not requested was
+  avoided, keeping the scope focused on the stated problem.
 
-- **Lógica separada del I/O.** El motor de puntuación vive en el paquete
-  `internal/bowling` y es independiente de la consola; `main.go` solo se encarga
-  de la entrada/salida. Esto hace que las reglas del juego sean **testeables sin
-  stdin** y que la CLI pudiera reemplazarse por otra interfaz (web, API) sin tocar
-  la lógica.
+- **Logic decoupled from I/O.** The scoring engine lives in the `internal/bowling`
+  package and is independent of the console; `main.go` only handles input/output.
+  This makes the game rules **testable without stdin** and lets the CLI be replaced
+  by another interface (web, API) without touching the logic.
 
-- **Algoritmo de puntuación sobre los tiros "aplanados".** En lugar de casos
-  especiales por frame, todos los tiros se recorren en una sola secuencia
-  aplicando el algoritmo clásico (strike = 10 + 2 tiros siguientes, spare = 10 +
-  1 tiro siguiente). Los tiros de bonificación del 10.º frame quedan dentro de esa
-  secuencia, por lo que el *look-ahead* funciona sin lógica adicional.
+- **Scoring algorithm over "flattened" rolls.** Instead of special-casing each
+  frame, every roll is traversed in a single sequence applying the classic
+  algorithm (strike = 10 + next 2 rolls, spare = 10 + next 1 roll). The tenth-frame
+  bonus rolls live inside that sequence, so the look-ahead works without extra logic.
 
-- **Entrada con números y símbolos `X` / `/`.** Se aceptan tanto pinos numéricos
-  (0–10) como la notación tradicional de bowling, para que la experiencia se
-  parezca a una hoja de anotación real.
+- **Input with numbers and `X` / `/` symbols.** Both numeric pins (0–10) and the
+  traditional bowling notation are accepted, so the experience resembles a real
+  scoresheet.
 
-- **Validación explícita de entradas.** Cada tiro se valida (rango 0–10, que la
-  suma de un frame no exceda 10, y que `X` / `/` se usen en la posición correcta)
-  devolviendo errores claros, en lugar de asumir entradas correctas.
+- **Explicit input validation.** Each roll is validated (range 0–10, that a frame's
+  total does not exceed 10, and that `X` / `/` are used in the correct position),
+  returning clear errors instead of assuming valid input.
 
-- **Convenciones de código.** Código y comentarios en inglés, variables locales en
-  `snake_case` y funciones con nombres declarativos. Los identificadores
-  exportados usan `PascalCase` únicamente donde el lenguaje lo exige.
+- **Code conventions.** Code and comments in English, local variables in
+  `snake_case`, and declarative function names. Exported identifiers use
+  `PascalCase` only where the language requires it.
 
-- **Marcador acumulado por frame.** Se muestra el puntaje acumulado tras cada
-  frame (como las tablas de la especificación), no solo el total final, para hacer
-  visible el cálculo frame a frame.
+- **Cumulative score per frame.** The running score is shown after each frame (like
+  the tables in the specification), not just the final total, to make the
+  frame-by-frame calculation visible.
 
-- **Cobertura de pruebas.** Se incluyen tests unitarios que codifican los tres
-  juegos de referencia de la kata (133, 300 y 119) además de casos de validación y
-  del bonus del 10.º frame.
+- **Test coverage.** Unit tests encode the three reference games from the kata
+  (133, 300 and 119) plus validation cases and the tenth-frame bonus.
