@@ -5,6 +5,18 @@ type frame struct {
 	rolls []int
 }
 
+// is_strike reports whether the frame opened with a strike (all ten pins on the
+// first throw).
+func (f frame) is_strike() bool {
+	return len(f.rolls) >= 1 && f.rolls[0] == total_pins
+}
+
+// is_spare reports whether the frame's first two throws cleared all ten pins
+// without a strike (i.e. a spare).
+func (f frame) is_spare() bool {
+	return len(f.rolls) >= 2 && !f.is_strike() && f.rolls[0]+f.rolls[1] == total_pins
+}
+
 // Game models a single line of ten-pin bowling, advancing frame by frame as
 // throws are recorded.
 type Game struct {
@@ -66,12 +78,11 @@ func (g *Game) IsBonusThrow() bool {
 	if !g.is_tenth_frame() {
 		return false
 	}
-	rolls := g.frames[g.current_frame].rolls
-	throw_count := len(rolls)
-	if throw_count >= 1 && rolls[0] == total_pins {
+	tenth := g.frames[g.current_frame]
+	if tenth.is_strike() {
 		return true // any throw following a leading strike is a bonus throw
 	}
-	return throw_count == 2 && rolls[0]+rolls[1] == total_pins // third throw after a spare
+	return len(tenth.rolls) == 2 && tenth.is_spare() // third throw after a spare
 }
 
 // ExtraThrowsGranted returns how many bonus throws the tenth frame has earned so
@@ -80,11 +91,11 @@ func (g *Game) ExtraThrowsGranted() int {
 	if !g.is_tenth_frame() {
 		return 0
 	}
-	rolls := g.frames[g.current_frame].rolls
-	if len(rolls) >= 1 && rolls[0] == total_pins {
+	tenth := g.frames[g.current_frame]
+	if tenth.is_strike() {
 		return 2
 	}
-	if len(rolls) >= 2 && rolls[0]+rolls[1] == total_pins {
+	if tenth.is_spare() {
 		return 1
 	}
 	return 0
@@ -133,10 +144,10 @@ func is_frame_complete(f frame, is_tenth bool) bool {
 		}
 		// Two throws so far: the frame is only finished without a bonus throw
 		// when it stayed open (neither a strike nor a spare).
-		return f.rolls[0]+f.rolls[1] < total_pins
+		return !f.is_strike() && !f.is_spare()
 	}
 
-	if throw_count == 1 && f.rolls[0] == total_pins {
+	if f.is_strike() {
 		return true // strike ends a regular frame after one throw
 	}
 	return throw_count >= 2
@@ -155,7 +166,7 @@ func pins_standing_in_frame(f frame, is_tenth bool) int {
 
 	// Tenth frame: pins are reset after every strike or completed spare.
 	if throw_count == 1 {
-		if f.rolls[0] == total_pins {
+		if f.is_strike() {
 			return total_pins
 		}
 		return total_pins - f.rolls[0]
@@ -163,7 +174,7 @@ func pins_standing_in_frame(f frame, is_tenth bool) int {
 
 	// Second bonus throw. Either the first throw was a strike, or the first two
 	// throws made a spare (which always resets the pins).
-	if f.rolls[0] == total_pins {
+	if f.is_strike() {
 		if f.rolls[1] == total_pins {
 			return total_pins
 		}
